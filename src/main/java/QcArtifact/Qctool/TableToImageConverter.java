@@ -3,8 +3,6 @@ import com.aspose.words.*;
 import com.aspose.words.Shape;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -12,8 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.List;
-
-
+import static QcArtifact.Qctool.Base64ToPNGConverter.convertBase64ToPNG;
 import static com.aspose.words.NodeType.SECTION;
 
 public class TableToImageConverter implements TableToImageConverterutil {
@@ -39,14 +36,14 @@ public class TableToImageConverter implements TableToImageConverterutil {
             Rectangle boundsInPixels = imageBuffer.getShapeRenderer().getBoundsInPixels(SCALE, DPI);
             int width = (int) boundsInPixels.getWidth();
             int height = (int) boundsInPixels.getHeight();
-            return createImage(image, format, width, height,imageBuffer.getAlternativeText());
+            return createImage(image, format, width, height, imageBuffer.getAlternativeText());
 
         } catch (Exception e) {
             throw new ConversionException(e);
         }
     }
 
-    private Image createImage(byte[] imageBuffer, String format, int width, int height,String altText) {
+    private Image createImage(byte[] imageBuffer, String format, int width, int height, String altText) {
 
         String base64Image = imgToBase64String(imageBuffer);
 
@@ -56,6 +53,7 @@ public class TableToImageConverter implements TableToImageConverterutil {
         image.setWidth(width + "px");
         image.setHeight(height + "px");
         image.setSrc("data:" + mimeType + ";base64, " + base64Image);
+        image.setBase64(base64Image);
         image.setAltText(altText);
 
         return image;
@@ -81,8 +79,7 @@ public class TableToImageConverter implements TableToImageConverterutil {
             // Add the shape to the document tree to have it rendered.
             parentSection.getBody().getFirstParagraph().appendChild(shape);
             return shape;
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new ConversionException(e);
         }
 
@@ -92,37 +89,33 @@ public class TableToImageConverter implements TableToImageConverterutil {
         try {
             ImageSaveOptions options = new ImageSaveOptions(SaveFormat.PNG);
             options.getMetafileRenderingOptions().setRenderingMode(MetafileRenderingMode.BITMAP);
-            options.setResolution(100);
+            options.setResolution(300);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             shape.getShapeRenderer().save(outputStream, options);
-            ByteArrayInputStream out =new ByteArrayInputStream(outputStream.toByteArray());
+            ByteArrayInputStream out = new ByteArrayInputStream(outputStream.toByteArray());
             BufferedImage tempInputBufferImage = ImageIO.read(out);
             Rectangle cropRectangle = FindBoundingBoxAroundNode(tempInputBufferImage);
             BufferedImage tempOutputBufferImage = tempInputBufferImage.getSubimage(cropRectangle.x, cropRectangle.y, cropRectangle.width, cropRectangle.height);
             ByteArrayOutputStream outputStream1 = new ByteArrayOutputStream();
-            ImageIO.write(tempOutputBufferImage,"PNG",outputStream1);
+            ImageIO.write(tempOutputBufferImage, "PNG", outputStream1);
             // removing the shape after table image is obtained
             shape.remove();
-            return outputStream1.toByteArray();}
-        catch (Exception e){
+            return outputStream1.toByteArray();
+        } catch (Exception e) {
             throw new ConversionException(e);
         }
 
     }
 
     // Cropping the unwanted space around the table image
-    public static Rectangle FindBoundingBoxAroundNode(BufferedImage originalBitmap)
-    {
+    public static Rectangle FindBoundingBoxAroundNode(BufferedImage originalBitmap) {
         Point min = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
         Point max = new Point(Integer.MIN_VALUE, Integer.MIN_VALUE);
-        for (int x = 0; x <originalBitmap.getWidth(); ++x)
-        {
-            for (int y = 0; y <originalBitmap.getHeight(); ++y)
-            {
+        for (int x = 0; x < originalBitmap.getWidth(); ++x) {
+            for (int y = 0; y < originalBitmap.getHeight(); ++y) {
                 int argb = originalBitmap.getRGB(x, y);
                 // searching for non-white Pixels
-                if (argb != new Color(255,255,255).getRGB())
-                {
+                if (argb != new Color(255, 255, 255).getRGB()) {
                     min.x = Math.min(x, min.x);
                     min.y = Math.min(y, min.y);
                     max.x = Math.max(x, max.x);
@@ -136,7 +129,6 @@ public class TableToImageConverter implements TableToImageConverterutil {
     }
 
 
-
     private static String imgToBase64String(byte[] img) {
         return new String(Base64.getEncoder().encode(img));
     }
@@ -146,25 +138,14 @@ public class TableToImageConverter implements TableToImageConverterutil {
         Document doc = new Document(a);
         NodeCollection<Table> tables = doc.getChildNodes(NodeType.TABLE, true);
         System.out.println(tables.getCount());
-       TableToImageConverter ty= new TableToImageConverter();
-
-for( int i=0;i< tables.getCount();i++) {
-    Table table = (Table) tables.get(i);
-    //Shape shape = generateShape(table);
-    //byte[] render = renderShape(shape);
-Image img = ty.renderTableAsImage(table);
-    // Insert the image into the document
-System.out.println(img.getSrc());
-System.out.println("______________________________________________________");
-
-    // Remove the original table
-
-}
-
-        // Save the modified document
-        String outputFilePath = "C:\\Users\\tgaur\\OneDrive\\Desktop\\Qctool\\Qctool\\src\\main\\resources\\output.docx";
-        //doc.save(outputFilePath);
-
-        System.out.println("Parsing completed. Output saved to: " + outputFilePath);
+        TableToImageConverter ty = new TableToImageConverter();
+        DocumentBuilder builder = new DocumentBuilder();
+        for (int i = 0; i < tables.getCount(); i++) {
+            Table table = (Table) tables.get(i);
+            Image img = ty.renderTableAsImage(table);
+            convertBase64ToPNG(img.getBase64(), "C:\\Users\\tgaur\\OneDrive\\Desktop\\Qctool\\Qctool\\src\\main\\resources" + i);
+            System.out.println("______________________________________________________");
+            System.out.println("Parsing completed. Output saved to: ");
+        }
     }
 }
