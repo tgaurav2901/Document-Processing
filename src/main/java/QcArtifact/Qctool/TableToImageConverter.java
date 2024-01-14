@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.List;
 import static QcArtifact.Qctool.Base64ToPNGConverter.convertBase64ToPNG;
+import static QcArtifact.Qctool.ImageCompression.*;
 import static com.aspose.words.NodeType.SECTION;
 
 public class TableToImageConverter implements TableToImageConverterutil {
@@ -34,6 +35,7 @@ public class TableToImageConverter implements TableToImageConverterutil {
             byte[] image = renderShape(imageBuffer);
             String format = "png";
             Rectangle boundsInPixels = imageBuffer.getShapeRenderer().getBoundsInPixels(SCALE, DPI);
+            System.out.println((int)boundsInPixels.getWidth()+"   "+(int)boundsInPixels.getHeight());
             int width = (int) boundsInPixels.getWidth();
             int height = (int) boundsInPixels.getHeight();
             return createImage(image, format, width, height, imageBuffer.getAlternativeText());
@@ -89,7 +91,7 @@ public class TableToImageConverter implements TableToImageConverterutil {
         try {
             ImageSaveOptions options = new ImageSaveOptions(SaveFormat.PNG);
             options.getMetafileRenderingOptions().setRenderingMode(MetafileRenderingMode.BITMAP);
-            options.setResolution(300);
+            options.setResolution(100);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             shape.getShapeRenderer().save(outputStream, options);
             ByteArrayInputStream out = new ByteArrayInputStream(outputStream.toByteArray());
@@ -98,8 +100,6 @@ public class TableToImageConverter implements TableToImageConverterutil {
             BufferedImage tempOutputBufferImage = tempInputBufferImage.getSubimage(cropRectangle.x, cropRectangle.y, cropRectangle.width, cropRectangle.height);
             ByteArrayOutputStream outputStream1 = new ByteArrayOutputStream();
             ImageIO.write(tempOutputBufferImage, "PNG", outputStream1);
-            // removing the shape after table image is obtained
-            shape.remove();
             return outputStream1.toByteArray();
         } catch (Exception e) {
             throw new ConversionException(e);
@@ -143,7 +143,14 @@ public class TableToImageConverter implements TableToImageConverterutil {
         for (int i = 0; i < tables.getCount(); i++) {
             Table table = (Table) tables.get(i);
             Image img = ty.renderTableAsImage(table);
-            convertBase64ToPNG(img.getBase64(), "C:\\Users\\tgaur\\OneDrive\\Desktop\\Qctool\\Qctool\\src\\main\\resources" + i);
+            byte[] originalBytes = base64ToBytes(img.getBase64());
+            byte[] compressedBytes = compress(originalBytes,1);
+            // Decompress the compressed byte array
+            byte[] decompressedBytes = decompress(compressedBytes);
+            // Convert the decompressed byte array back to Base64 string
+            String decompressedBase64 = bytesToBase64(decompressedBytes);
+            convertBase64ToPNG(decompressedBase64, "C:\\Users\\tgaur\\OneDrive\\Desktop\\Qctool\\Qctool\\src\\main\\resources" + i);
+           System.out.println(img.getBase64());
             System.out.println("______________________________________________________");
             System.out.println("Parsing completed. Output saved to: ");
         }
