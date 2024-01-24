@@ -8,6 +8,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.*;
 import java.util.List;
 import static QcArtifact.Qctool.Base64ToPNGConverter.convertBase64ToPNG;
@@ -18,13 +19,10 @@ public class TableToImageConverter implements TableToImageConverterutil {
 
     private static final Logger LOG = LoggerFactory.getLogger(TableToImageConverter.class);
     private static final Map<String, String> IMAGE_MIME_TYPES = Collections.singletonMap("png", "image/png");
-    public static final float SCALE = 1.0f;
-    public static final float DPI = 96.0f;
 
-    List<Image> TableImages;
 
     public TableToImageConverter() {
-        this.TableImages = new LinkedList<>();
+
     }
 
     @Override
@@ -34,10 +32,10 @@ public class TableToImageConverter implements TableToImageConverterutil {
             Shape imageBuffer = generateShape(table);
             byte[] image = renderShape(imageBuffer);
             String format = "png";
-            Rectangle boundsInPixels = imageBuffer.getShapeRenderer().getBoundsInPixels(SCALE, DPI);
-            System.out.println((int)boundsInPixels.getWidth()+"   "+(int)boundsInPixels.getHeight());
-            int width = (int) boundsInPixels.getWidth();
-            int height = (int) boundsInPixels.getHeight();
+            InputStream is = new ByteArrayInputStream(image);
+            BufferedImage out = ImageIO.read(is);
+            int width = out.getWidth();
+            int height = out.getHeight();
             return createImage(image, format, width, height, imageBuffer.getAlternativeText());
 
         } catch (Exception e) {
@@ -134,7 +132,7 @@ public class TableToImageConverter implements TableToImageConverterutil {
     }
 
     public static void main(String[] args) throws Exception {
-        String a = "C:\\Users\\tgaur\\OneDrive\\Desktop\\Qctool\\Qctool\\src\\main\\resources\\output.docx";
+        String a = "C:\\Users\\tgaur\\OneDrive\\Desktop\\Qctool\\Qctool\\src\\main\\resources\\new.docx";
         Document doc = new Document(a);
         NodeCollection<Table> tables = doc.getChildNodes(NodeType.TABLE, true);
         System.out.println(tables.getCount());
@@ -149,6 +147,7 @@ public class TableToImageConverter implements TableToImageConverterutil {
             byte[] decompressedBytes = decompress(compressedBytes);
             // Convert the decompressed byte array back to Base64 string
             String decompressedBase64 = bytesToBase64(decompressedBytes);
+            System.out.println(img.getHeight() +" "+img.getWidth());
             convertBase64ToPNG(decompressedBase64, "C:\\Users\\tgaur\\OneDrive\\Desktop\\Qctool\\Qctool\\src\\main\\resources" + i);
            System.out.println(img.getBase64());
             System.out.println("______________________________________________________");
