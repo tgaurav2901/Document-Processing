@@ -10,7 +10,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.*;
-import java.util.List;
 import static QcArtifact.Qctool.Base64ToPNGConverter.convertBase64ToPNG;
 import static QcArtifact.Qctool.ImageCompression.*;
 import static com.aspose.words.NodeType.SECTION;
@@ -70,7 +69,7 @@ public class TableToImageConverter implements TableToImageConverterutil {
             Section parentSection = (Section) table.getAncestor(SECTION);
             // Assume that the table cannot be larger than the page in size.
             shape.setWidth(parentSection.getPageSetup().getPageWidth());
-            shape.setHeight(parentSection.getPageSetup().getPageHeight());
+            shape.setHeight(2*(parentSection.getPageSetup().getPageHeight()));
             shape.setFillColor(new Color(255, 255, 255));
             shape.setStroked(false);
 
@@ -137,7 +136,6 @@ public class TableToImageConverter implements TableToImageConverterutil {
         NodeCollection<Table> tables = doc.getChildNodes(NodeType.TABLE, true);
         System.out.println(tables.getCount());
         TableToImageConverter ty = new TableToImageConverter();
-        DocumentBuilder builder = new DocumentBuilder();
         for (int i = 0; i < tables.getCount(); i++) {
             Table table = (Table) tables.get(i);
             Image img = ty.renderTableAsImage(table);
